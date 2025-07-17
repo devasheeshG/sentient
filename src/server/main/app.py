@@ -18,7 +18,6 @@ from main.notifications.routes import router as notifications_router
 from main.integrations.routes import router as integrations_router
 from main.misc.routes import router as misc_router
 from main.agents.routes import router as agents_router
-from main.journal.routes import router as journal_router
 from main.settings.routes import router as settings_router # Import the new router
 from main.testing.routes import router as testing_router
 
@@ -52,7 +51,6 @@ app.include_router(notifications_router)
 app.include_router(integrations_router)
 app.include_router(misc_router)
 app.include_router(agents_router)
-app.include_router(journal_router)
 app.include_router(settings_router) # Add the new router
 app.include_router(testing_router)
 

@@ -4,17 +4,15 @@ import { useRouter, usePathname } from "next/navigation"
 import { FloatingDock } from "@components/ui/floating-dock"
 import {
 	IconAdjustments,
-	IconBell,
 	IconBook,
-	IconChecklist,
 	IconHome,
 	IconLogout,
-	IconUser, // Keep for fallback
-	IconUserCircle,
+	IconChecklist,
 	IconMessage,
 	IconPlugConnected
 } from "@tabler/icons-react"
 import toast from "react-hot-toast"
+import { IconBell } from "@tabler/icons-react"
 import { motion } from "framer-motion"
 import { cn } from "@utils/cn"
 
@@ -163,7 +161,7 @@ export default function FloatingNav({ onChatOpen, onNotificationsOpen }) {
 			title: "Organizer",
 			href: "/journal",
 			icon: (
-				<IconBook className="h-full w-full text-neutral-500 dark:text-neutral-300" />
+				<IconChecklist className="h-full w-full text-neutral-500 dark:text-neutral-300" />
 			)
 		},
 		{

@@ -9,11 +9,18 @@ const appServerUrl =
 
 export const POST = withAuth(async function POST(request, { authHeader }) {
 	try {
-		const taskData = await request.json()
-		const response = await fetch(`${appServerUrl}/agents/add-task`, {
+		const { description } = await request.json()
+		if (!description) {
+			return NextResponse.json(
+				{ error: "Description is required." },
+				{ status: 400 }
+			)
+		}
+
+		const response = await fetch(`${appServerUrl}/agents/add-action-item`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json", ...authHeader },
-			body: JSON.stringify(taskData)
+			body: JSON.stringify({ description })
 		})
 
 		const data = await response.json()
@@ -23,6 +30,9 @@ export const POST = withAuth(async function POST(request, { authHeader }) {
 		return NextResponse.json(data)
 	} catch (error) {
 		console.error("API Error in /tasks/add:", error)
-		return NextResponse.json({ error: error.message }, { status: 500 })
+		return NextResponse.json(
+			{ error: `Failed to add action item: ${error.message}` },
+			{ status: 500 }
+		)
 	}
 })

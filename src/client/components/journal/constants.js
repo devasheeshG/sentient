@@ -4,6 +4,7 @@ import {
 	IconCircleCheck,
 	IconAlertCircle,
 	IconMailQuestion,
+	IconLoader,
 	IconMessageQuestion,
 	IconPlayerPlay,
 	IconX
@@ -50,6 +51,20 @@ export const taskStatusColors = {
 		color: "text-orange-400",
 		bg: "bg-[var(--color-accent-orange)]/80",
 		border: "border-[var(--color-accent-orange)]"
+	},
+	context_verification: {
+		icon: IconLoader,
+		label: "Processing",
+		color: "text-blue-400",
+		bg: "bg-[var(--color-accent-blue)]/80",
+		border: "border-[var(--color-accent-blue)]"
+	},
+	planning: {
+		icon: IconLoader,
+		label: "Generating Plan",
+		color: "text-blue-400",
+		bg: "bg-[var(--color-accent-blue)]/80",
+		border: "border-[var(--color-accent-blue)]"
 	},
 	active: {
 		icon: IconPlayerPlay,

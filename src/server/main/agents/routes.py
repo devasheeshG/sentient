@@ -1,13 +1,13 @@
 import datetime
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
-from main.agents.models import AddTaskRequest, UpdateTaskRequest, TaskIdRequest, GeneratePlanRequest, AnswerClarificationRequest
+from main.agents.models import AddTaskRequest, UpdateTaskRequest, TaskIdRequest, GeneratePlanRequest, AnswerClarificationRequest, ActionItemRequest
 from main.config import INTEGRATIONS_CONFIG
 from main.dependencies import mongo_manager
 from main.auth.utils import PermissionChecker
 from main.agents.utils import clean_llm_output
 from workers.executor.tasks import execute_task_plan # keep for immediate execution
-from workers.tasks import generate_plan_from_context, process_memory_item # new tasks
+from workers.tasks import generate_plan_from_context, process_memory_item, process_action_item # new tasks
 from workers.planner.llm import get_planner_agent
 from workers.planner.db import get_all_mcp_descriptions
 from workers.tasks import calculate_next_run
@@ -75,29 +75,29 @@ async def add_task(
     }
     await mongo_manager.task_collection.insert_one(task_doc)
 
-    # Also add a corresponding journal entry
-    page_date_str = now_utc.strftime("%Y-%m-%d")
-    if request.schedule and request.schedule.get("type") == "once" and request.schedule.get("run_at"):
-        try:
-            page_date_str = datetime.datetime.fromisoformat(request.schedule["run_at"]).strftime("%Y-%m-%d")
-        except (ValueError, TypeError):
-            pass # Keep today's date if format is bad
-
-    journal_block = {
-        "block_id": str(uuid.uuid4()),
-        "user_id": user_id,
-        "page_date": page_date_str,
-        "content": f"TASK: {request.description}",
-        "order": 999, # Place at the end of the day
-        "created_by": "user_task",
-        "created_at": now_utc,
-        "updated_at": now_utc,
-        "linked_task_id": task_id,
-        "task_status": "approval_pending"
-    }
-    await mongo_manager.journal_blocks_collection.insert_one(journal_block)
-
     return {"message": "Task created successfully", "task_id": task_id}
+
+@router.post("/add-action-item", status_code=status.HTTP_202_ACCEPTED)
+async def add_action_item_from_user(
+    request: ActionItemRequest,
+    user_id: str = Depends(PermissionChecker(required_permissions=["write:tasks"]))
+):
+    """Endpoint for user to manually add an action item from the UI."""
+    source_event_id = f"user_manual_input_{uuid.uuid4()}"
+    original_context = {
+        "source": "user_manual_input",
+        "description": request.description,
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+    }
+    
+    # Directly trigger the planning pipeline.
+    # The `process_action_item` task will create the initial task document in 'context_verification' state.
+    process_action_item.delay(
+        user_id, [request.description], [], source_event_id, original_context
+    )
+    
+    return {"message": "Action item received and is being processed."}
+
 
 @router.post("/fetch-tasks")
 async def fetch_tasks(
@@ -257,7 +257,7 @@ async def answer_clarifications(
     update_payload = {"clarifying_questions": questions}
 
     if all_answered:
-        update_payload["status"] = "planning"
+        update_payload["status"] = "planning" # Set status to 'planning' immediately
         generate_plan_from_context.delay(request.taskId)
 
     await mongo_manager.task_collection.update_one(
@@ -265,7 +265,10 @@ async def answer_clarifications(
         {"$set": update_payload}
     )
 
-    return {"message": "Answers submitted successfully. Planning will now proceed."}
+    if all_answered:
+        return {"message": "Answers submitted. Generating a new plan..."}
+    else:
+        return {"message": "Answers updated."}
 
 
 @router.post("/rerun-task")

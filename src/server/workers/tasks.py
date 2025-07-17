@@ -194,18 +194,13 @@ def extract_from_context(user_id: str, service_name: str, event_id: str, event_d
             action_items = extracted_data.get("action_items", [])
             topics = extracted_data.get("topics", [])
 
-            if service_name in ["gmail", "gcalendar", "chat"]:
-                for item in action_items:
-                    if not isinstance(item, str) or not item.strip():
-                        continue
-                    page_date = get_date_from_text(item)
-                    new_block = await db_manager.create_journal_entry_for_action_item(user_id, item, page_date)
-                    new_block_context = {"source": "journal_block", "block_id": new_block['block_id'], "original_content": item, "page_date": page_date}
-                    process_action_item.delay(user_id, [item], topics, new_block['block_id'], new_block_context)
-                    logger.info(f"Created journal entry {new_block['block_id']} and dispatched for action item: {item}")
-            else: # Existing logic for journal_block source
-                if action_items and topics:
-                    process_action_item.delay(user_id, action_items, topics, event_id, event_data)
+            # --- SIMPLIFIED LOGIC ---
+            # Always process extracted action items directly, regardless of source.
+            if action_items:
+                # The source_event_id is the original email/calendar/journal ID.
+                # The original_context is the data from that event.
+                process_action_item.delay(user_id, action_items, topics, event_id, event_data)
+                logger.info(f"Dispatched {len(action_items)} action items from event {event_id} (service: {service_name}) to planner for user {user_id}")
 
             for fact in memory_items:
                 if isinstance(fact, str) and fact.strip():
@@ -274,30 +269,10 @@ async def async_process_action_item(user_id: str, action_items: list, topics: li
 
         if questions_list:
             logger.info(f"Task {task_id}: Needs clarification. Questions: {questions_list}")
-            questions_for_db = [{"question_id": str(uuid.uuid4()), "text": q.strip(), "answer": None} for q in questions_list]
-            
-            block_id_to_update = original_context.get("block_id") if original_context.get("source") == "journal_block" else None
-
-            if block_id_to_update:
-                # Update the existing journal block with the clarification prompt
-                clarification_text = f"I need a bit more information to help with: '{task_description}'. Can you clarify the following for me in the journal?"
-                await db_manager.journal_blocks_collection.update_one(
-                    {"block_id": block_id_to_update, "user_id": user_id},
-                    {"$set": {"task_status": "clarification_pending", "content": clarification_text}}
-                )
-                logger.info(f"Updated journal block {block_id_to_update} to ask for clarification.")
-            else:
-                # Create a new journal entry for today if the source wasn't a journal block
-                clarification_content = f"I need a bit more information to help with: '{task_description}'. Can you clarify the following for me in the journal?"
-                today_date_str = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d')
-                await db_manager.create_journal_entry_for_task(
-                    user_id=user_id,
-                    content=clarification_content,
-                    date_str=today_date_str,
-                    task_id=task_id,
-                    task_status="clarification_pending"
-                )
-                logger.info(f"Task {task_id} needs clarification, created new journal entry for today.")
+            questions_for_db = [
+                {"question_id": str(uuid.uuid4()), "text": q.strip(), "answer": None} 
+                for q in questions_list
+            ]
             
             await db_manager.update_task_with_questions(task_id, "clarification_pending", questions_for_db)
             await notify_user(user_id, f"I have a few questions to help me plan: '{task_description[:50]}...'", task_id)
@@ -308,7 +283,7 @@ async def async_process_action_item(user_id: str, action_items: list, topics: li
             logger.info(f"Task {task_id} moved to 'clarification_pending'.")
         else:
             logger.info(f"Task {task_id}: No clarification needed. Triggering plan generation.")
-            await db_manager.update_task_status(task_id, "planning")
+            await db_manager.update_task_status(task_id, "planning") # Set status to planning
             generate_plan_from_context.delay(task_id)
 
     except Exception as e:
