@@ -561,8 +561,7 @@ const IntegrationsPage = () => {
 			const hiddenTools = [
 				"google_search",
 				"progress_updater",
-				"chat_tools",
-				"journal"
+				"chat_tools"
 			]
 			const connectable = integrationsWithIcons.filter(
 				(i) =>

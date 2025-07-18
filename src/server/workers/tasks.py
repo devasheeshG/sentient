@@ -143,13 +143,7 @@ def extract_from_context(user_id: str, service_name: str, event_id: str, event_d
             time_context_str = f"The current date and time is {current_time.strftime('%A, %Y-%m-%d %H:%M:%S %Z')}."
 
             llm_input_content = ""
-            if service_name == "journal_block":
-                page_date = event_data.get('page_date')
-                if page_date:
-                    llm_input_content = f"Source: Journal Entry on {page_date}\n\nContent:\n{event_data.get('content', '')}"
-                else:
-                    llm_input_content = f"Source: Journal Entry\n\nContent:\n{event_data.get('content', '')}"
-            elif service_name == "gmail":
+            if service_name == "gmail":
                 llm_input_content = f"Source: Email\nSubject: {event_data.get('subject', '')}\n\nBody:\n{event_data.get('body', '')}"
             elif service_name == "gcalendar":
                 llm_input_content = f"Source: Calendar Event\nSummary: {event_data.get('summary', '')}\n\nDescription:\n{event_data.get('description', '')}"
@@ -197,7 +191,7 @@ def extract_from_context(user_id: str, service_name: str, event_id: str, event_d
             # --- SIMPLIFIED LOGIC ---
             # Always process extracted action items directly, regardless of source.
             if action_items:
-                # The source_event_id is the original email/calendar/journal ID.
+                # The source_event_id is the original email/calendar event ID.
                 # The original_context is the data from that event.
                 process_action_item.delay(user_id, action_items, topics, event_id, event_data)
                 logger.info(f"Dispatched {len(action_items)} action items from event {event_id} (service: {service_name}) to planner for user {user_id}")

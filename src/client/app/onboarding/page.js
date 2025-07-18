@@ -900,16 +900,6 @@ const OnboardingPage = () => {
 					},
 					{
 						icon: (
-							<IconBook size={32} className="text-purple-400" />
-						),
-						title: "Start Your First Journal",
-						description:
-							"Add your to-dos and assign tasks to your AI assistant to get them done.",
-						buttonText: "Go to Tasks",
-						onClick: () => router.push("/journal")
-					},
-					{
-						icon: (
 							<IconSparkles
 								size={32}
 								className="text-yellow-400"

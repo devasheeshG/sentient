@@ -126,7 +126,7 @@ async def generate_chat_llm_stream(
         last_user_query = messages[-1].get("content", "") if messages else ""
         relevant_tool_names = await _select_relevant_tools(last_user_query, tool_name_to_desc_map)
 
-        mandatory_tools = {"journal", "supermemory", "chat_tools"}
+        mandatory_tools = {"supermemory", "chat_tools"}
         final_tool_names = set(relevant_tool_names) | mandatory_tools
 
         filtered_mcp_servers = {}
@@ -160,14 +160,12 @@ async def generate_chat_llm_stream(
     )
 
     system_prompt = (
-        f"You are {agent_name}, a personalized AI assistant. Your goal is to be as helpful as possible by using your available tools for information retrieval or by creating journal entries for actions that need to be planned and executed.\n\n"
+        f"You are {agent_name}, a personalized AI assistant. Your goal is to be as helpful as possible by using your available tools for information retrieval or performing actions.\n\n"
         f"**Critical Instructions:**\n"
         f"1. **Handle Disconnected Tools:** You have a list of tools the user has not connected yet. If the user's query clearly refers to a capability from this list (e.g., asking to 'send a slack message' when Slack is disconnected), you MUST stop and politely inform the user that they need to connect the tool in the Settings > Integrations page. Do not proceed with other tools.\n"
         f"2. **Analyze User Intent:** First, determine if the user is asking for information (a 'retrieval' query) or asking you to perform an action (an 'action' query).\n"
-        f"3. **Retrieval Queries:** For requests to find, list, search, or read information (e.g., 'what's the weather?', 'search for emails about project X', 'what's on my calendar?'), use the appropriate tools from your available tool list to get the information and answer the user directly.\n"
-        f"4. **Action Queries:** For requests to perform an action (e.g., 'send an email', 'create a document', 'schedule an event', 'delete this file'), you MUST NOT call the tool for that action directly. Instead, you MUST use the `journal-add_action_item` tool. The `content` for this tool should be a clear description of the user's request (e.g., `content='Send an email to my boss about the report'`). After calling this tool, inform the user that you have noted their request and it will be processed.\n"
-        f"5. **Memory Usage:** ALWAYS use `supermemory-search` first to check for existing context. If you learn a new, permanent fact about the user, use `supermemory-addToSupermemory` to save it.\n"
-        f"6. **Final Answer Format:** When you have a complete, final answer for the user that is not a tool call, you MUST wrap it in `<answer>` tags. For example: `<answer>The weather in London is 15°C and cloudy.</answer>`.\n\n"
+        f"3. **Memory Usage:** ALWAYS use `supermemory-search` first to check for existing context. If you learn a new, permanent fact about the user, use `supermemory-addToSupermemory` to save it.\n"
+        f"4. **Final Answer Format:** When you have a complete, final answer for the user that is not a tool call, you MUST wrap it in `<answer>` tags. For example: `<answer>The weather in London is 15°C and cloudy.</answer>`.\n\n"
         f"**Your Persona:**\n"
         f"- Your responses should be **{verbosity}**.\n"
         f"- Your tone should be **{humor_level}**.\n"

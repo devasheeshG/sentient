@@ -20,7 +20,6 @@ MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
 db = client[MONGO_DB_NAME]
 tasks_collection = db["tasks"]
-journal_blocks_collection = db["journal_blocks"]
 
 # --- MCP Server ---
 mcp = FastMCP(
@@ -32,7 +31,6 @@ mcp = FastMCP(
 async def update_progress(ctx: Context, task_id: str, update_message: str, block_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Updates the progress of a specific task. To be called by an executor agent.
-    If the task originated from a journal block, provide the block_id to sync progress there as well.
     """
     try:
         user_id = auth.get_user_id_from_context(ctx)
@@ -47,14 +45,6 @@ async def update_progress(ctx: Context, task_id: str, update_message: str, block
             {"task_id": task_id, "user_id": user_id},
             {"$push": {"progress_updates": progress_update}}
         )
-        
-        # ADDED: Update the journal_blocks collection if block_id is provided
-        if block_id:
-            await journal_blocks_collection.update_one(
-                {"block_id": block_id, "user_id": user_id},
-                {"$push": {"task_progress": progress_update},
-                 "$set": {"task_status": "processing"}}
-            )
         
         if task_result.matched_count == 0:
             return {"status": "failure", "error": "Task not found or user mismatch."}

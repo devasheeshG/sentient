@@ -2,16 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import {
-	IconSparkles,
-	IconHelpCircle,
-	IconBook,
-	IconBulb,
-	IconSettings,
-	IconRepeat
-} from "@tabler/icons-react"
+import { IconSparkles, IconHelpCircle, IconSettings } from "@tabler/icons-react"
 import toast from "react-hot-toast"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { Tooltip } from "react-tooltip"
 
 const HelpTooltip = ({ content }) => (
@@ -123,25 +116,11 @@ const HomePage = () => {
 							</h2>
 							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 								<IdeaCard
-									icon={<IconRepeat size={24} />}
-									title="Automate Reports"
-									description="Set up a recurring workflow to search your Gmail for weekly reports and summarize them in a Google Doc."
-									cta="Go to Tasks"
-									onClick={() => router.push("/journal")}
-								/>
-								<IdeaCard
 									icon={<IconSettings size={24} />}
 									title="Personalize Your AI"
 									description="Teach Sentient about your communication style and preferences in the Settings page."
 									cta="Customize personality"
 									onClick={() => router.push("/settings")}
-								/>
-								<IdeaCard
-									icon={<IconBulb size={24} />}
-									title="Never Forget an Idea"
-									description="Add action items to your pipeline and let Sentient figure out the plan to get it done."
-									cta="Go to Tasks"
-									onClick={() => router.push("/journal")}
 								/>
 							</div>
 						</motion.div>
