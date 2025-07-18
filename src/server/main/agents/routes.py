@@ -1,13 +1,16 @@
 import datetime
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
-from main.agents.models import AddTaskRequest, UpdateTaskRequest, TaskIdRequest, GeneratePlanRequest, AnswerClarificationRequest, ActionItemRequest
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.responses import StreamingResponse
+from main.agents.models import AddTaskRequest, UpdateTaskRequest, TaskIdRequest, GeneratePlanRequest, AnswerClarificationRequest, ActionItemRequest, TaskChatRequest
 from main.config import INTEGRATIONS_CONFIG
 from main.dependencies import mongo_manager
 from main.auth.utils import PermissionChecker
 from main.agents.utils import clean_llm_output
 from workers.executor.tasks import execute_task_plan # keep for immediate execution
 from workers.tasks import generate_plan_from_context, process_memory_item, process_action_item # new tasks
+from main.agents.task_chat_utils import generate_task_chat_stream
+
 from workers.planner.llm import get_planner_agent
 from workers.planner.db import get_all_mcp_descriptions
 from workers.tasks import calculate_next_run
@@ -118,6 +121,8 @@ async def update_task(
     update_data = {}
     if request.description is not None:
         update_data["description"] = request.description
+    if request.assigned_to is not None:
+        update_data["assigned_to"] = request.assigned_to
     if request.priority is not None:
         update_data["priority"] = request.priority
     if request.plan is not None:
@@ -174,12 +179,7 @@ async def delete_task(
     if delete_result.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found.")
 
-    # Now, find and unlink any associated journal entries
-    await mongo_manager.journal_blocks_collection.update_many(
-        {"user_id": user_id, "linked_task_id": request.taskId},
-        {"$unset": {"linked_task_id": "", "task_status": ""}}
-    )
-    return {"message": "Task deleted successfully and unlinked from any journal entries."}
+    return {"message": "Task deleted successfully."}
 
 @router.post("/approve-task")
 async def approve_task(
@@ -366,3 +366,38 @@ async def generate_plan(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to generate plan: {str(e)}")
+@router.post("/tasks/{task_id}/chat", summary="Interactive chat for a specific task")
+async def task_chat_endpoint(
+    task_id: str,
+    request: TaskChatRequest,
+    user_id: str = Depends(PermissionChecker(required_permissions=["write:tasks"]))
+):
+    """
+    Handles streaming chat for an AI-assigned task.
+    It instantiates a Qwen agent, loads the task's context and history,
+    and streams back the agent's response.
+    """
+    async def event_stream_generator():
+        try:
+            async for event in generate_task_chat_stream(
+                user_id=user_id,
+                task_id=task_id,
+                messages=request.messages,
+                db_manager=mongo_manager
+            ):
+                yield json.dumps(event) + "\n"
+        except Exception as e:
+            error_response = {
+                "type": "error",
+                "message": f"An error occurred in the task chat stream: {str(e)}"
+            }
+            yield json.dumps(error_response) + "\n"
+
+    return StreamingResponse(
+        event_stream_generator(),
+        media_type="application/x-ndjson",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+    )

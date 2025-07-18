@@ -16,7 +16,7 @@
 # NOTES:
 #   - Run this script from the project's root directory.
 #   - You might need to install 'gnome-terminal' or change the TERMINAL_CMD
-#     variable below to your preferred terminal emulator (e.g., konsole, xterm).
+#     variable below to your preferred terminal emulator (e.g., konsole, xterm, terminator).
 #   - Ensure services like MongoDB and Redis are installed and enabled on your system.
 #   - This script may require 'sudo' for starting system services.
 #
@@ -30,8 +30,10 @@
 # Examples:
 # TERMINAL_CMD="xterm -e"
 # TERMINAL_CMD="konsole -e"
-# TERMINAL_CMD="gnome-terminal --"
-TERMINAL_CMD="xterm -e"
+# This command forces a new window for each service, which is ideal for Alt+Tabbing.
+TERMINAL_CMD="gnome-terminal --window --"
+# If the above still fails due to Snap issues, a great alternative is Terminator:
+# TERMINAL_CMD="terminator -e"
 
 # --- Script Body ---
 # Exit immediately if a command exits with a non-zero status.
@@ -49,11 +51,13 @@ function check_command() {
 function start_in_new_terminal() {
     local title="$1"
     local command="$2"
-    # Use printf for better formatting and to avoid issues with echo's -e flag
     printf "🚀 Launching %s...\n" "$title"
-    # The `exec bash` at the end keeps the new terminal open after the command finishes or fails.
+    # CRITICAL FIX: Unset LD_LIBRARY_PATH to prevent conflicts with Snap-based terminals.
+    # This allows gnome-terminal (as a Snap) to launch correctly from the script's environment.
+    # The rest of the command sets the window title and keeps it open after execution.
+    unset LD_LIBRARY_PATH && \
     $TERMINAL_CMD /bin/bash -c "echo -ne '\033]0;${title}\a'; ${command}; exec bash" &
-    sleep 0.5 # Give the desktop environment time to launch the new terminal
+    sleep 0.5
 }
 
 # --- Pre-run Checks ---
@@ -61,7 +65,6 @@ echo "--- Performing Pre-run Checks ---"
 check_command systemctl
 check_command redis-cli
 check_command npm
-check_command $(echo "$TERMINAL_CMD" | cut -d' ' -f1) # Check for the chosen terminal
 
 # --- Path and Environment Setup ---
 echo "--- Setting up Environment ---"
@@ -103,23 +106,32 @@ echo -e "\n--- 1. Starting Databases & Core Infrastructure ---"
 
 # Start MongoDB Service
 echo "🚀 Starting MongoDB Service (may require sudo)..."
-sudo systemctl start mongod || echo "MongoDB service was already running or failed to start. Check with: sudo systemctl status mongod"
+sudo systemctl start mongod || echo "⚠️  MongoDB service was already running or failed to start. Check with: sudo systemctl status mongod"
 sleep 1
 
 # Start Redis Server
 echo "🚀 Starting Redis Server (may require sudo)..."
 if ! pgrep -x "redis-server" > /dev/null; then
-    sudo systemctl start redis-server || (echo "Failed to start Redis via systemctl. Check service status." && exit 1)
-    echo "Redis service started."
+    sudo systemctl start redis-server || (echo "❌ Failed to start Redis via systemctl. Check service status." && exit 1)
+    echo "✅ Redis service started."
 else
-    echo "Redis service is already running."
+    echo "✅ Redis service is already running."
 fi
 sleep 1
 
 # --- 2. Resetting Queues & State ---
 echo -e "\n--- 2. Resetting Queues & State ---"
 echo "🚀 Flushing Redis database (Celery Queue)..."
-redis-cli -a "$REDIS_PASSWORD" FLUSHALL
+# Use an environment variable for the password to handle special characters robustly.
+# Add a PING check for better error reporting.
+export REDISCLI_AUTH="$REDIS_PASSWORD"
+if ! redis-cli PING | grep -q "PONG"; then
+    echo "❌ Error: Failed to authenticate with Redis. Please check your REDIS_PASSWORD in the .env file."
+    unset REDISCLI_AUTH
+    exit 1
+fi
+redis-cli FLUSHALL
+unset REDISCLI_AUTH # Unset for security
 echo "✅ Redis flushed."
 
 # --- 3. Start MCP Servers ---
@@ -160,4 +172,6 @@ start_in_new_terminal "API - Main Server" "$main_api_command"
 client_command="cd '$CLIENT_PATH' && npm run dev"
 start_in_new_terminal "CLIENT - Next.js" "$client_command"
 
-echo -e "\n✅ All services have been launched successfully in new terminals."
+# --- 6. Final Message ---
+echo -e "\n✅ All services have been launched successfully in new terminal windows."
+echo "You can switch between them using your desktop environment's window management (e.g., Alt+Tab)."

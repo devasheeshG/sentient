@@ -68,6 +68,29 @@ class PlannerMongoManager:
         logger.info(f"Created initial task {task_id} for user {user_id}")
         return task_id
 
+    async def create_proactive_task(self, user_id: str, description: str, original_context: dict, source_event_id: str) -> str:
+        """Creates a new task from a proactive source (e.g., email poller), auto-assigned to AI."""
+        task_id = str(uuid.uuid4())
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        task_doc = {
+            "task_id": task_id,
+            "user_id": user_id,
+            "description": description,
+            "status": "pending",
+            "assigned_to": "ai", # Auto-assign to AI
+            "priority": 1, # Default priority
+            "plan": [],
+            "original_context": original_context,
+            "source_event_id": source_event_id,
+            "progress_updates": [],
+            "agent_history": [],
+            "created_at": now_utc,
+            "updated_at": now_utc,
+        }
+        await self.tasks_collection.insert_one(task_doc)
+        logger.info(f"Created proactive task {task_id} for user {user_id} from event {source_event_id}")
+        return task_id
+
     async def update_task_field(self, task_id: str, fields: dict):
         """Updates specific fields of a task document."""
         await self.tasks_collection.update_one(

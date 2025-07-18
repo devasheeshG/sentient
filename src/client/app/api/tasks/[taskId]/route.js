@@ -34,3 +34,51 @@ export const GET = withAuth(async function GET(
 		return NextResponse.json({ error: error.message }, { status: 500 })
 	}
 })
+
+// POST: Handle interactive chat for a single task
+export const POST = withAuth(async function POST(
+	request,
+	{ params, authHeader }
+) {
+	const { taskId } = params
+	if (!taskId) {
+		return NextResponse.json(
+			{ error: "Task ID parameter is required" },
+			{ status: 400 }
+		)
+	}
+
+	try {
+		const { messages } = await request.json()
+		const backendResponse = await fetch(
+			`${APP_SERVER_URL}/agents/tasks/${taskId}/chat`,
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json", ...authHeader },
+				body: JSON.stringify({ messages }),
+				duplex: "half" // Enable streaming
+			}
+		)
+
+		if (!backendResponse.ok) {
+			const errorText = await backendResponse.text()
+			throw new Error(
+				errorText ||
+					`Backend chat endpoint failed with status ${backendResponse.status}`
+			)
+		}
+
+		return new Response(backendResponse.body, {
+			status: 200,
+			headers: {
+				"Content-Type": "application/x-ndjson",
+				"Cache-Control": "no-cache",
+				Connection: "keep-alive",
+				"X-Accel-Buffering": "no" // Disable buffering on Netlify/Vercel
+			}
+		})
+	} catch (error) {
+		console.error(`API Error in /tasks/${taskId}/chat:`, error)
+		return NextResponse.json({ error: error.message }, { status: 500 })
+	}
+})

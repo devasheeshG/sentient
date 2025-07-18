@@ -126,7 +126,7 @@ const HomePage = () => {
 									icon={<IconRepeat size={24} />}
 									title="Automate Reports"
 									description="Set up a recurring workflow to search your Gmail for weekly reports and summarize them in a Google Doc."
-									cta="Go to Organizer"
+									cta="Go to Tasks"
 									onClick={() => router.push("/journal")}
 								/>
 								<IdeaCard
@@ -140,7 +140,7 @@ const HomePage = () => {
 									icon={<IconBulb size={24} />}
 									title="Never Forget an Idea"
 									description="Add action items to your pipeline and let Sentient figure out the plan to get it done."
-									cta="Go to Organizer"
+									cta="Go to Tasks"
 									onClick={() => router.push("/journal")}
 								/>
 							</div>

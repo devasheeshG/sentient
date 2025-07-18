@@ -137,10 +137,10 @@ export default function LayoutWrapper({ children }) {
 						router.push("/home")
 						break
 					case "j":
-						router.push("/journal")
+						router.push("/journal") // "j" for journal/tasks
 						break
 					case "t":
-						router.push("/tasks")
+						router.push("/journal")
 						break
 					case "i":
 						router.push("/integrations")

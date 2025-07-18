@@ -1,105 +1,197 @@
 "use client"
 
-import React from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { Tooltip } from "react-tooltip"
 import {
 	IconX,
-	IconCircleCheck,
-	IconAlertTriangle,
-	IconPencil,
-	IconTrash
+	IconSend,
+	IconLoader,
+	IconPlayerStopFilled
 } from "@tabler/icons-react"
-import TaskDetailsContent from "./TaskDetailsContent"
+import ChatBubble from "@components/ChatBubble"
+import toast from "react-hot-toast"
 
-const TaskDetailsModal = ({
-	task,
-	onClose,
-	onApprove,
-	onEdit,
-	onDelete,
-	integrations
-}) => {
-	let missingTools = []
-	if (task.status === "approval_pending" && integrations) {
-		const requiredTools = new Set(task.plan?.map((step) => step.tool) || [])
-		requiredTools.forEach((toolName) => {
-			const integration = integrations.find((i) => i.name === toolName)
-			if (
-				integration &&
-				!integration.connected &&
-				integration.auth_type !== "builtin"
-			) {
-				missingTools.push(integration.display_name || toolName)
+const TaskChatPanel = ({ task, onClose, onDataChange }) => {
+	const [messages, setMessages] = useState(task.agent_history || [])
+	const [input, setInput] = useState("")
+	const [isSending, setIsSending] = useState(false)
+	const chatEndRef = useRef(null)
+	const abortControllerRef = useRef(null)
+
+	useEffect(() => {
+		chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
+	}, [messages])
+
+	const handleSendMessage = async () => {
+		if (!input.trim()) return
+		setIsSending(true)
+
+		const newUserMessage = { role: "user", content: input }
+		const updatedMessages = [...messages, newUserMessage]
+		setMessages(updatedMessages)
+		setInput("")
+
+		abortControllerRef.current = new AbortController()
+
+		try {
+			const response = await fetch(`/api/tasks/${task.task_id}`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ messages: updatedMessages }),
+				signal: abortControllerRef.current.signal
+			})
+
+			if (!response.ok || !response.body) {
+				const errorData = await response.json().catch(() => ({}))
+				throw new Error(
+					errorData.error ||
+						"Failed to get streaming response from server."
+				)
 			}
-		})
+
+			const reader = response.body.getReader()
+			const decoder = new TextDecoder()
+			let buffer = ""
+			let assistantMessageId = null
+
+			while (true) {
+				const { value, done } = await reader.read()
+				if (done) break
+
+				buffer += decoder.decode(value, { stream: true })
+				let newlineIndex
+				while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+					const line = buffer.slice(0, newlineIndex).trim()
+					buffer = buffer.slice(newlineIndex + 1)
+					if (!line) continue
+
+					try {
+						const parsed = JSON.parse(line)
+						if (parsed.type === "assistantStream") {
+							const token = parsed.token || ""
+							assistantMessageId = parsed.messageId
+
+							setMessages((prev) => {
+								const existingMsgIndex = prev.findIndex(
+									(msg) => msg.id === assistantMessageId
+								)
+								if (existingMsgIndex !== -1) {
+									return prev.map((msg, index) =>
+										index === existingMsgIndex
+											? {
+													...msg,
+													content:
+														(msg.content || "") +
+														token
+												}
+											: msg
+									)
+								} else {
+									return [
+										...prev,
+										{
+											id: assistantMessageId,
+											role: "assistant",
+											content: token
+										}
+									]
+								}
+							})
+						}
+					} catch (e) {
+						console.error("Error parsing stream line:", line, e)
+					}
+				}
+			}
+		} catch (error) {
+			if (error.name !== "AbortError") {
+				toast.error(`Error: ${error.message}`)
+			}
+		} finally {
+			setIsSending(false)
+			onDataChange() // Refresh the main task list
+		}
 	}
+
+	const handleStopStreaming = () => {
+		abortControllerRef.current?.abort()
+	}
+
 	return (
 		<motion.div
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
 			exit={{ opacity: 0 }}
-			className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
+			className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-end z-50"
 		>
 			<Tooltip id="task-details-tooltip" />
 			<motion.div
-				initial={{ scale: 0.9, y: 20 }}
-				animate={{ scale: 1, y: 0 }}
-				exit={{ scale: 0.9, y: 20 }}
-				className="bg-gradient-to-br from-[var(--color-primary-surface)] to-[var(--color-primary-background)] p-6 rounded-2xl shadow-xl w-full max-w-3xl border border-[var(--color-primary-surface-elevated)] max-h-[90vh] flex flex-col"
+				initial={{ x: "100%" }}
+				animate={{ x: 0 }}
+				exit={{ x: "100%" }}
+				transition={{ type: "spring", stiffness: 300, damping: 30 }}
+				className="bg-gradient-to-br from-[var(--color-primary-surface)] to-[var(--color-primary-background)] shadow-xl w-full max-w-2xl h-full border-l border-[var(--color-primary-surface-elevated)] flex flex-col"
 			>
-				<div className="flex justify-between items-center mb-6">
-					<h3 className="text-2xl font-semibold text-white truncate">
+				<header className="flex justify-between items-center p-4 border-b border-neutral-700 flex-shrink-0">
+					<h3 className="text-xl font-semibold text-white truncate">
 						{task.description}
 					</h3>
 					<button onClick={onClose} className="hover:text-white">
 						<IconX />
 					</button>
-				</div>
-				<div className="overflow-y-auto custom-scrollbar pr-2 space-y-6">
-					<TaskDetailsContent task={task} />
-				</div>
-				<div className="flex justify-between items-center mt-6 pt-4 border-t border-neutral-700/80">
-					<div>
-						{onDelete && (
-							<button
-								onClick={() => onDelete(task.task_id)}
-								className="py-2 px-4 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/40 text-sm font-semibold flex items-center gap-2"
-							>
-								<IconTrash size={16} /> Delete
-							</button>
-						)}
-					</div>
-					<div className="flex items-center gap-4">
-						<button
-							onClick={onClose}
-							className="py-2 px-5 rounded-lg bg-[var(--color-primary-surface-elevated)] hover:bg-[var(--color-primary-surface)] text-sm"
+				</header>
+				<div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+					{messages.map((msg, i) => (
+						<div
+							key={msg.id || i}
+							className={`flex w-full ${
+								msg.role === "user"
+									? "justify-end"
+									: "justify-start"
+							}`}
 						>
-							Close
-						</button>
-						{task.status === "approval_pending" && (
-							<>
+							<ChatBubble
+								message={msg.content}
+								isUser={msg.role === "user"}
+							/>
+						</div>
+					))}
+					<div ref={chatEndRef} />
+				</div>
+				<div className="p-4 border-t border-neutral-700 flex-shrink-0">
+					<div className="relative">
+						<textarea
+							value={input}
+							onChange={(e) => setInput(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" && !e.shiftKey) {
+									e.preventDefault()
+									handleSendMessage()
+								}
+							}}
+							placeholder="Chat with the AI about this task..."
+							className="w-full bg-neutral-800/50 border border-neutral-700 rounded-lg p-3 pr-20 resize-none"
+							rows={2}
+						/>
+						<div className="absolute right-3 top-1/2 -translate-y-1/2">
+							{isSending ? (
 								<button
-									onClick={() => onEdit(task)}
-									className="py-2.5 px-5 rounded-lg bg-orange-500/80 hover:bg-orange-500 text-sm flex items-center gap-2"
+									onClick={handleStopStreaming}
+									className="p-2 rounded-full bg-red-500 text-white"
 								>
-									<IconPencil size={16} /> Edit
+									<IconPlayerStopFilled size={16} />
 								</button>
+							) : (
 								<button
-									onClick={() => onApprove(task.task_id)}
-									className="py-2.5 px-6 rounded-lg bg-[var(--color-accent-green)] hover:bg-[var(--color-accent-green-hover)] text-sm flex items-center gap-2 disabled:opacity-50 transition-colors"
-									disabled={missingTools.length > 0}
-									title={
-										missingTools.length > 0
-											? `Connect: ${missingTools.join(", ")}`
-											: "Approve Plan"
-									}
+									onClick={handleSendMessage}
+									disabled={!input.trim()}
+									className="p-2 rounded-full bg-blue-500 text-white disabled:bg-neutral-600"
 								>
-									<IconCircleCheck className="w-5 h-5" />{" "}
-									Approve
+									<IconSend size={16} />
 								</button>
-							</>
-						)}
+							)}
+						</div>
 					</div>
 				</div>
 			</motion.div>
@@ -107,4 +199,4 @@ const TaskDetailsModal = ({
 	)
 }
 
-export default TaskDetailsModal
+export default TaskChatPanel

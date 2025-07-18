@@ -904,8 +904,8 @@ const OnboardingPage = () => {
 						),
 						title: "Start Your First Journal",
 						description:
-							"Write down your thoughts and let Sentient proactively manage your day.",
-						buttonText: "Go to Organizer",
+							"Add your to-dos and assign tasks to your AI assistant to get them done.",
+						buttonText: "Go to Tasks",
 						onClick: () => router.push("/journal")
 					},
 					{

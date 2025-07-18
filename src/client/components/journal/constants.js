@@ -87,8 +87,12 @@ export const taskStatusColors = {
 }
 
 export const priorityMap = {
-	0: { label: "High", color: "text-red-400" },
-	1: { label: "Medium", color: "text-yellow-400" },
-	2: { label: "Low", color: "text-gray-400" },
-	default: { label: "Medium", color: "text-yellow-400" }
+	0: { label: "High", color: "text-red-400", bg: "bg-red-500/10" },
+	1: { label: "Medium", color: "text-yellow-400", bg: "bg-yellow-500/10" },
+	2: { label: "Low", color: "text-gray-400", bg: "bg-gray-500/10" },
+	default: {
+		label: "Medium",
+		color: "text-yellow-400",
+		bg: "bg-yellow-500/10"
+	}
 }

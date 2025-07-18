@@ -158,8 +158,8 @@ export default function FloatingNav({ onChatOpen, onNotificationsOpen }) {
 			)
 		},
 		{
-			title: "Organizer",
-			href: "/journal",
+			title: "Tasks",
+			href: "/journal", // This page is now the main task list
 			icon: (
 				<IconChecklist className="h-full w-full text-neutral-500 dark:text-neutral-300" />
 			)

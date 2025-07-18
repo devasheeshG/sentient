@@ -217,77 +217,32 @@ def extract_from_context(user_id: str, service_name: str, event_id: str, event_d
 
 @celery_app.task(name="process_action_item")
 def process_action_item(user_id: str, action_items: list, topics: list, source_event_id: str, original_context: dict):
-    """Orchestrates the pre-planning phase for a new proactive task."""
-    run_async(async_process_action_item(user_id, action_items, topics, source_event_id, original_context))
-
-async def get_clarifying_questions(user_id: str, task_description: str, topics: list, original_context: dict, db_manager: PlannerMongoManager) -> List[str]:
     """
-    Uses a unified agent to search memory and generate clarifying questions if needed.
-    Returns a list of questions, which is empty if no clarification is required.
+    Creates a new task from an extracted action item, auto-assigned to the AI.
+    This replaces the old context verification and planning pipeline.
     """
-    user_profile = await db_manager.user_profiles_collection.find_one({"user_id": user_id})
-    supermemory_user_id = user_profile.get("userData", {}).get("supermemory_user_id") if user_profile else None
+    run_async(async_create_proactive_task(user_id, action_items, source_event_id, original_context))
 
-    if not supermemory_user_id:
-        logger.warning(f"User {user_id} has no Supermemory ID. Cannot verify context.")
-        return [f"Can you tell me more about '{topic}'?" for topic in topics]
-
-    supermemory_mcp_url = f"{SUPERMEMORY_MCP_BASE_URL.rstrip('/')}/{supermemory_user_id}{SUPERMEMORY_MCP_ENDPOINT_SUFFIX}"
-    available_tools = get_all_mcp_descriptions()
-
-    agent = get_question_generator_agent(
-        supermemory_mcp_url=supermemory_mcp_url,
-        original_context=original_context,
-        topics=topics,
-        available_tools=available_tools
-    )
-
-    user_prompt = f"Based on the task '{task_description}' and the provided context, please determine if any clarifying questions are necessary."
-    messages = [{'role': 'user', 'content': user_prompt}]
-
-    final_response_str = ""
-    for chunk in agent.run(messages=messages):
-        if isinstance(chunk, list) and chunk and chunk[-1].get("role") == "assistant":
-            final_response_str = chunk[-1].get("content", "")
-    
-    response_data = JsonExtractor.extract_valid_json(clean_llm_output(final_response_str))
-    if response_data and isinstance(response_data.get("clarifying_questions"), list):
-        return response_data["clarifying_questions"]
-    else:
-        logger.error(f"Question generator agent returned invalid data: {response_data}. Cannot ask for clarification.")
-        return [] # Default to no questions on failure
-
-async def async_process_action_item(user_id: str, action_items: list, topics: list, source_event_id: str, original_context: dict):
-    """Async logic for the proactive task orchestrator."""
+async def async_create_proactive_task(user_id: str, action_items: list, source_event_id: str, original_context: dict):
+    """
+    Async logic to create a new task in the database from a proactive source.
+    """
     db_manager = PlannerMongoManager()
     task_id = None
     try:
         task_description = " ".join(map(str, action_items))
-        task_id = await db_manager.create_initial_task(user_id, task_description, action_items, topics, original_context, source_event_id)
-
-        questions_list = await get_clarifying_questions(user_id, task_description, topics, original_context, db_manager)
-
-        if questions_list:
-            logger.info(f"Task {task_id}: Needs clarification. Questions: {questions_list}")
-            questions_for_db = [
-                {"question_id": str(uuid.uuid4()), "text": q.strip(), "answer": None} 
-                for q in questions_list
-            ]
-            
-            await db_manager.update_task_with_questions(task_id, "clarification_pending", questions_for_db)
-            await notify_user(user_id, f"I have a few questions to help me plan: '{task_description[:50]}...'", task_id)
-            capture_event(user_id, "clarification_needed", {
-                "task_id": task_id,
-                "question_count": len(questions_list)
-            })
-            logger.info(f"Task {task_id} moved to 'clarification_pending'.")
-        else:
-            logger.info(f"Task {task_id}: No clarification needed. Triggering plan generation.")
-            await db_manager.update_task_status(task_id, "planning") # Set status to planning
-            generate_plan_from_context.delay(task_id)
+        # This method needs to be created or adapted in PlannerMongoManager
+        task_id = await db_manager.create_proactive_task(
+            user_id=user_id,
+            description=task_description,
+            original_context=original_context,
+            source_event_id=source_event_id
+        )
+        logger.info(f"Successfully created proactive task {task_id} for user {user_id} from event {source_event_id}")
+        await notify_user(user_id, f"I've created a new task for you: '{task_description[:50]}...'", task_id)
 
     except Exception as e:
-        logger.error(f"Error in process_action_item for task {task_id or 'unknown'}: {e}", exc_info=True)
+        logger.error(f"Error in create_proactive_task for event {source_event_id}: {e}", exc_info=True)
         if task_id:
             await db_manager.update_task_status(task_id, "error", {"error": str(e)})
     finally:

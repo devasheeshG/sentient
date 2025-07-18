@@ -269,14 +269,9 @@ const Sidebar = ({ userDetails, setSidebarVisible, isSidebarVisible }) => {
 							label="Home"
 						/>
 						<NavLink
-							href="/tasks"
+							href="/journal"
 							icon={<IconChecklist />}
 							label="Tasks"
-						/>
-						<NavLink
-							href="/journal"
-							icon={<IconBook />}
-							label="Organizer"
 						/>
 						<NavLink
 							href="/integrations"
