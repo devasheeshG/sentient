@@ -2,7 +2,7 @@
 
 ![README Banner](./.github/assets/banner.png)
 
-<h1>Proactive Intelligence Across Your Apps</h1>
+<h1>Sentient: Your Personal AI Assistant</h1>
   
 <!-- Badges -->
 <p>
@@ -38,82 +38,87 @@
 
 <br />
 
-> Sentient is an open-source AI project aimed at bridging the gap between input context and output actions performed by agents. AI Agents heavily rely on input prompts to perform actions. We wish to _eliminate prompting entirely_ making the first big step towards truly autonomous AI that is aligned with a user's goals and can get stuff done without needing to context-switch between multiple apps and typing long prompts.
+> **Sentient** is a personal AI assistant for anyone and everyone who wants to live their life more productively.
 >
-> [Read our manifesto.](https://docs.google.com/document/d/1vbCGAbh9f8vXfPup_Z7cW__gnOLdRhEtHKyoIxJD8is/edit?tab=t.0#heading=h.2kit9yqvlc77)
+> It acts as your central command center, bridging the gap between your goals and the actions required to achieve them. It is designed to be a truly proactive partner that understands you, manages your digital life, and gets things done—without you having to type long, complex prompts.
+>
+> It can:
+> - **💬 Chat with you** about any topic via text or voice.
+> - **🧠 Learn your preferences, habits, and goals** to better serve you over time.
+> - **⚙️ Execute complex, multi-step tasks** and recurring workflows.
+> - **🗓️ Proactively manage your day**, reading your emails and calendar to suggest schedules and remind you of important events.
+> - **🔗 Integrate seamlessly** with the apps you use every day.
+>
+> For more information [read our manifesto.](https://docs.google.com/document/d/1vbCGAbh9f8vXfPup_Z7cW__gnOLdRhEtHKyoIxJD8is/edit?tab=t.0#heading=h.2kit9yqvlc77)
 
 ---
 
-## ✨ Current Features
-
-![image](https://github.com/user-attachments/assets/756c8aeb-1748-445c-a09a-df6d99aeee58)
-
 <div align="center">
-  <p>The Home Page</p>
+  <h2><a href="https://chat.whatsapp.com/IOHxuf2W8cKEuyZrMo8DOJ">💬 Join our WhatsApp Community! 💬</a></h2>
+  <p>Interested in trying Sentient out? Join our community to get the latest updates, ask questions, and connect with the team.</p>
 </div>
 
-![Journl](https://github.com/user-attachments/assets/467fd26d-18a4-4107-98a9-05fa83b26a77)
+---
+
+## ✨ Features
+
+Sentient is a powerful, web-based platform designed for seamless interaction, automation, and intelligence.
+
+<img width="1460" height="885" alt="image" src="https://github.com/user-attachments/assets/8f967a06-cd0f-405c-946b-39d3f9094f81" />
 
 <div align="center">
-  <p>The Journal page is the central page of the app - use it to track your day and Sentient gets stuff done.</p>
+  <p>The Home page is your central chat interface to talk with your AI assistant.</p>
 </div>
 
-![image](https://github.com/user-attachments/assets/fcf05b39-7f8d-46f8-9702-e0791f27f918)
+<img width="1628" height="903" alt="image" src="https://github.com/user-attachments/assets/3c557a71-acdd-402f-a33c-e4da91a69ebc" />
 
 <div align="center">
-  <p>Sentient co-authors the journal with you.</p>
+  <p>The Tasks page gives you a unified view of all your tasks, where the AI assists in execution.</p>
 </div>
 
-![image](https://github.com/user-attachments/assets/319d7c35-9046-4ea1-a369-88ab1a9ded8e)
+<img width="1673" height="904" alt="image" src="https://github.com/user-attachments/assets/85534686-09d5-49e8-95b7-6e207c022816" />
 
 <div align="center">
-  <p>Use the Tasks page to create and manage workflows.</p>
+  <p>The Integrations page is where you connect all your apps.</p>
 </div>
 
-Sentient has evolved into a powerful web-based platform with a robust set of features designed for deep integration and automation:
+<img width="1637" height="915" alt="image" src="https://github.com/user-attachments/assets/980ddb1d-f0df-456f-a918-89d35bab3352" />
 
-### 🧠 Proactive Context & Learning
+<div align="center">
+  <p>The Settings page is where you can customize the application.</p>
+</div>
 
-Sentient automatically collects information from connected applications like **Gmail** and **Google Calendar**. It extracts relevant context, identifying important facts to remember and also creates plans to tackle action items - without needing to be prompted.
 
-### 📝 Memory System
+### 💬 Unified Chat Interface
+The home page is a universal chat screen where you can talk with Sentient about anything. Use **text or voice** to ask questions, give commands, or simply have a conversation. The chat is also supercharged with tools like Internet Search, Weather, News, and Shopping for any specific queries.
 
-- **SuperMemory:** Permanent facts about you—your preferences, relationships, and key details—are stored and managed through an integration with **Supermemory**, creating a rich, personalized knowledge base that the agent can update and retrieve from anytime.
-- **Notes & Journal:** A full-featured journal allows you to simply write down what's on your mind and have Sentient manage it for you. Sentient can also write to this journal, giving you updates on what it's doing and more. The journal also helps you keep track of scheduled and recurring tasks created by Sentient. Any information obtained from your context sources is also populated in the journal.
+### 🤖 Autonomous Task Management
+The **Tasks page** is your mission control center. Here you can add, view, and manage all your to-dos.
+- **AI-Assisted Execution:** Describe a high-level goal, and Sentient will generate a detailed, step-by-step plan to achieve it using its integrated tools.
+- **Asynchronous Workflows:** Approve a plan, and Sentient gets to work in the background, handling complex, multi-step workflows without interrupting you. You can monitor progress in real-time.
+- **Unified View:** Track active, pending, and completed tasks all in one place.
 
-### 🤖 Autonomous Task & Agent System
-
-- **Generate Plans from Goals:** Sentient can generate detailed plans to execute tasks using connected tools, all from a simple high-level goal.
-- **Asynchronous Execution:** Once approved, tasks are handled **asynchronously** in the background - you can approve as many tasks as you want simultaneously. The executor agent intelligently uses the available tools to complete the plan, providing real-time progress updates.
-- **View & Manage Tasks:** A dedicated **Tasks page** lets you view active, pending, and completed tasks, check their progress, and see the final results.
-
-### 🔌 Extensive Integrations (MCP Hub)
-
-Our **Model Context Protocol (MCP)** hub allows for a powerful, distributed system of tools. Current integrations include:
-
+### 🔌 Seamless Integrations
+The **Integrations page** is where you connect Sentient to your digital life. Our **Model Context Protocol (MCP)** hub allows for a powerful, distributed system of tools. Current integrations include:
 - **Google Suite:** Gmail, Google Calendar, Google Drive, Google Docs, Google Sheets, and Google Slides.
 - **Productivity:** Slack and Notion.
 - **Developer:** GitHub.
 - **Information:** Internet Search (Google Search), News (NewsAPI), Weather (AccuWeather), Google Shopping and Google Maps.
 - **Miscellaneous:** QuickChart for generating charts on the fly.
 
-More tools will be added soon.
+### 🧠 Proactive Intelligence & Learning
+Sentient doesn't just wait for commands. It proactively scans connected apps like **Gmail** and **Google Calendar** to understand your schedule and priorities.
+- **Contextual Awareness:** It identifies action items, suggests tasks, and learns important facts about you.
+- **Personalized Memory:** Key details about your preferences, relationships, and goals are stored via an integration with **Supermemory**, creating a rich, personalized knowledge base that helps the agent serve you better over time.
 
-### 💬 Interactive Chat Overlay
-
-A chat interface is available on any page. It allows you to have conversations with Sentient and also use tools like Internet Search, Weather, News and Shopping for any specific queries.
-
-### ⚙️ Full Customization & Settings
-
-A central settings page gives you complete control:
-
-- Connect or disconnect applications with OAuth (for applications supporting OAuth) or manually.
-- Set custom privacy filters to prevent Sentient from processing context containing sensitive information.
-- Configure WhatsApp notifications to stay updated on the go.
+### ⚙️ Full Customization
+The **Settings page** gives you complete control over your agent.
+- **Manage Connections:** Easily connect or disconnect your apps.
+- **Privacy Filters:** Set custom filters to prevent Sentient from processing context containing sensitive information.
+- **Notifications:** Configure WhatsApp notifications to stay updated on the go.
 
 ### 🔒 Self-Hostable
-
-The entire platform can be self-hosted and configured to run fully locally. [Check the relevant docs for more info.](https://sentient-2.gitbook.io/docs/getting-started/running-sentient-from-source-self-host)
+The entire platform is open-source and can be self-hosted and configured to run fully locally, ensuring your data stays private. [Check the relevant docs for more info.](https://sentient-2.gitbook.io/docs/getting-started/running-sentient-from-source-self-host)
 
 ---
 
@@ -121,12 +126,11 @@ The entire platform can be self-hosted and configured to run fully locally. [Che
 
 We are constantly working to expand Sentient's capabilities. Here is a glimpse of what's planned for the future:
 
-- **Make the Web App as feature-rich as possible:** There is a lot that can be improved in the existing webapp.
-- **OS-Level Integration:** Launch native apps for `Windows`, `MacOS`, `Android` and `iOS` that allow for deeper integrations.
-- **Expanded Integrations:** Add support for more popular services, such as the `Microsoft 365 Suite`, `Spotify`, and so on.
-- **Advanced Reasoning & Planning:** Reasoning improvements for the planning and execution pipeline.
-- **Tool-Specific UI:** Enhance the interface with custom UI components for specific tool outputs, such as maps for location-based results.
-- **Custom Tool Integrations:** Let users add any app of their choice.
+- **OS-Level Integration:** Launch native apps for `Windows`, `MacOS`, `Android` and `iOS` for deeper, more proactive assistance.
+- **Expanded Integrations:** Add support for more popular services, such as the `Microsoft 365 Suite`, `Spotify`, and more.
+- **Advanced Conversational AI:** Enhance the chat experience with more natural voice interactions, better memory, and more sophisticated reasoning.
+- **Richer Task Execution:** Improve the planning and execution pipeline and provide richer visual feedback for tasks.
+- **Custom Tool Integrations:** Create a framework that allows users to easily add any app of their choice.
 
 ## :wave: Contributing
 
@@ -166,7 +170,7 @@ Distributed under the GNU AGPL License. See [LICENSE.txt](https://github.com/exi
        <a href="https://github.com/itsskofficial">
          <img src="https://avatars.githubusercontent.com/u/65887545?v=4?s=100" width="100px;" alt=""/>
          <br />
-         <sub><b>itsskofficial</b></sub>
+         <sub><b>itsskofficial (Sarthak)</b></sub>
        </a>
      </td>  
      <td align="center">
